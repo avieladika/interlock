@@ -16,6 +16,39 @@ Implementation context is often spread across tickets, documentation, and source
 
 Interlock collects context before producing requirements and a plan. Each phase exchanges structured artifacts and checks whether its output is usable before continuing. The final phase produces proposed code changes for review.
 
+## Highlights
+
+### Retrieval-augmented project context
+
+The knowledge base indexes repository files and documentation with **LlamaIndex**, stores vectors in **Chroma**, and generates local embeddings using Hugging Face's `BAAI/bge-small-en-v1.5`. Similarity retrieval supplies relevant context to model-backed synthesis. This connects requirements and planning to retrieved project material, while the quality of the result still depends on the indexed evidence and model output.
+
+See [knowledge-base implementation](core/utils/knowledge_base.py).
+
+### A staged pipeline with structured artifacts
+
+Context discovery, requirements synthesis, planning, and code generation are separate services. They exchange **Pydantic models** that represent evidence, acceptance criteria, plan steps, and proposed file changes. Usability checks stop the synchronizer when intermediate results are incomplete. This is an explicit orchestration pipeline: the application controls the phase order and the model supplies structured outputs within those phases.
+
+See [pipeline orchestration](core/synchronizer.py) and [artifact models](core/models).
+
+### Generated-code validation with Python's AST
+
+The code integrity gate parses the response as JSON, validates required fields and permitted actions, and calls `ast.parse` for generated Python files. Invalid syntax is reported as a failed generation step. This checks structure and syntax without executing the proposed code; it does not prove that the code satisfies the requirements or passes application tests.
+
+See [CodeIntegrityGate](core/gates/phase4gates/gatePhase4.py).
+
+### Technologies and third-party components
+
+| Component | How it is used |
+| --- | --- |
+| **MCP Python SDK + mcp-atlassian** | Connects the application to an Atlassian MCP subprocess for Jira and Confluence tools. `uvx` launches that subprocess. |
+| **LlamaIndex** | Loads documents, builds the retrieval index, and connects retrieval to response synthesis. |
+| **Chroma + Hugging Face embeddings** | Persists the knowledge index and represents text with the BGE embedding model. |
+| **Groq SDK and LlamaIndex Groq integration** | Calls the configured language model for context, requirements, planning, and code synthesis. The code defaults to `llama-3.3-70b-versatile`. |
+| **Pydantic** | Defines typed artifacts and validates their data as it passes between stages. |
+| **Streamlit** | Presents ticket input, progress, requirements, plans, and generated code in a browser UI. |
+| **Git + Python asyncio** | Git manages the local source checkout; async orchestration coordinates MCP calls and moves selected blocking Git work to threads. |
+
+
 ## What It Includes
 
 - Jira and Confluence access through an Atlassian MCP subprocess.
