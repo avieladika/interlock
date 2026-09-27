@@ -1,29 +1,50 @@
 # Interlock
 
-A development assistant that combines Jira tickets, Confluence documentation, and repository context to produce structured requirements, technical plans, and proposed code changes.
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![MCP](https://img.shields.io/badge/MCP-222222?style=for-the-badge)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 
-## Highlights
+**Links:** [Repository](https://github.com/avieladika/interlock) · [Orchestrator](core/synchronizer.py) · [Validation gate](core/gates/phase4gates/gatePhase4.py)
 
-- Atlassian integration through MCP.
+Interlock is a development assistant that turns a Jira ticket and project context into structured requirements, a technical plan, and proposed code changes. Its workflow brings together Atlassian MCP integration, repository indexing, model-backed synthesis, and validation gates.
+
+## The Challenge
+
+Implementation context is often spread across tickets, documentation, and source code. Moving directly from a ticket to generated code can leave requirements, assumptions, and acceptance criteria implicit.
+
+## The Solution
+
+Interlock collects context before producing requirements and a plan. Each phase exchanges structured artifacts and checks whether its output is usable before continuing. The final phase produces proposed code changes for review.
+
+## What It Includes
+
+- Jira and Confluence access through an Atlassian MCP subprocess.
 - Repository checkout and code indexing for contextual retrieval.
-- Explicit context, requirements, plan, and code-change artifacts.
-- Validation gates between pipeline phases.
-- JSON-shape checks and Python syntax checks for generated changes.
-- Streamlit interface showing requirements, plans, and proposed code.
+- Structured context, requirements, plan, and code-change artifacts.
+- Validation stages for intermediate outputs.
+- Generated-change JSON validation and Python syntax checks.
+- Streamlit tabs for requirements, plans, code, and execution logs.
 
-## Workflow
+## System Model
+
+The synchronizer coordinates phase services. Source adapters collect evidence, synthesizers transform it into artifacts, and gates decide whether the workflow can advance. Code generation returns proposed changes; syntax validation does not establish behavioral correctness.
+
+## Core Technical Flow
+
+Jira ticket → context discovery → evidence and requirements → technical plan → proposed changes → structural/syntax checks.
 
 ```mermaid
 flowchart LR
-    T[Jira ticket] --> C[Context discovery]
-    D[Confluence and repository] --> C
-    C --> R[Requirements and evidence]
+    T[Jira ticket] --> C[Context and evidence]
+    C --> R[Requirements]
     R --> P[Technical plan]
     P --> G[Proposed code changes]
-    G --> V[Structure and Python syntax validation]
+    G --> V[Structure and syntax checks]
 ```
 
-The orchestrator is `core/synchronizer.py`. Phase services coordinate synthesizers, typed artifacts, and gates. The final phase returns generated changes for inspection; it does not demonstrate that they pass application tests.
+## Why This Design
+
+Explicit artifacts make the transition from a requirement to a proposed change inspectable. Phase boundaries also make incomplete context visible before it reaches code generation.
 
 ## Setup
 
